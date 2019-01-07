@@ -1,0 +1,242 @@
+
+---
+title: "Práctica 2: Limpieza y validación de los datos"
+author: "Eduardo Ponce Palma"
+date: "6 de enero de 2019"
+output:
+  word_document: default
+  pdf_document:
+    highlight: zenburn
+    toc: yes
+  html_document:
+    highlight: default
+    includes:
+      in_header: header.html
+    number_sections: yes
+    theme: cosmo
+    toc: yes
+    toc_depth: 2
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+******
+# Introduccion
+******
+## Presentacion
+En esta práctica se elabora un caso práctico orientado a aprender a identificar los datos relevantes para un proyecto analítico y usar las herramientas de integración, limpieza, validación y análisis de las mismas. Para hacer esta práctica tendréis que trabajar en grupos de hasta 3 personas, o si preferís, también podéis hacerlo de manera individual. Tendréis que entregar un solo archivo con el enlace Github (https://github.com) donde se encuentren las soluciones incluyendo los nombres de los componentes del equipo. Podéis utilizar la Wiki de Github para describir vuestro equipo y los diferentes archivos que corresponden a vuestra entrega. Cada miembro del equipo tendrá que contribuir con su usuario Github. Podéis utilizar estos ejemplos como guía:
+
+● Ejemplo: https://github.com/Bengis/nba-gap-cleaning
+
+● Ejemplo complejo (archivo adjunto).
+
+## Competencias 
+En esta práctica se desarrollan las siguientes competencias del Máster de Data Science:
+
+● Capacidad de analizar un problema en el nivel de abstracción adecuado a cada situación y aplicar las habilidades y conocimientos adquiridos para abordarlo y resolverlo. 
+
+● Capacidad para aplicar las técnicas específicas de tratamiento de datos (integración, transformación, limpieza y validación) para su posterior análisis. 
+
+## Objetivos 
+Los objetivos concretos de esta práctica son:
+
+● Aprender a aplicar los conocimientos adquiridos y su capacidad de resolución de problemas en entornos nuevos o poco conocidos dentro de contextos más amplios o multidisciplinares. 
+
+● Saber identificar los datos relevantes y los tratamientos necesarios (integración, limpieza y validación) para llevar a cabo un proyecto analítico.
+
+● Aprender a analizar los datos adecuadamente para abordar la información contenida en los datos. 
+
+● Identificar la mejor representación de los resultados para aportar conclusiones sobre el problema planteado en el proceso analítico.
+
+● Actuar con los principios éticos y legales relacionados con la manipulación de datos en función del ámbito de aplicación. 
+
+● Desarrollar las habilidades de aprendizaje que les permitan continuar estudiando de un modo que tendrá que ser en gran medida autodirigido o autónomo.
+
+● Desarrollar la capacidad de búsqueda, gestión y uso de información y recursos en el ámbito de la ciencia de datos.
+
+******
+# Practica
+******
+
+## Descripción
+Para esta practica se ha tomado un conjunto de datos "Video Game Sales with Ratings" de la pagina web de KAGGLE.COM, este dataset fue generado hasta la fecha del 22 de diciembre del 2016 y representa un conjunto de datos de juegos, sus caracteristicas, sus ventas en el mundo y puntuaciones de Metacritic.
+
+### El Dataset
+El dataset se contituye de 16719 registros de 16 columna o atributos, se describen a continuacion:
+
+> Name.- Name of the game
+
+> Platform.- Console on which the game is running
+
+> Year_of_Release.- Año de lanzamiento del juego
+
+> Genre.- Categoria o genero del juego
+
+> Publisher.- Empresa que lo publica
+
+> NA_Sales.- Ventas en Norte America (en millones/unidades)
+
+> EU_Sales.- Ventas en la Union Europea (en millones/unidades)
+
+> JP_Sales.- Ventas en Japon (en millones/unidades)
+
+> Other_Sales.- Ventas en el resto de mundo excepto las anteriores (en millones/unidades)
+
+> Global_Sales.- Total de ventas en el mundo (en millones/unidades)
+
+> Critic_Score.- Puntuación agregada del personal de Metacritic
+
+> Critic_Count.- Numero de criticas dependientes de Critic_Score
+
+> User_ScoreS.- Puntuación agregada de los suscriptores de Metacritic
+
+> User_Count.- Numero de criticas dependientes de User_ScoreS
+
+> Developer.- Desarrolladores del juego
+
+> Rating.- La calificacion del juego (adolecentes, solo adultos, etc)
+
+### Importacia
+En esta practica dado este conjunto de datos se pretende determinar que relacion tienen las ventas y las puntuaciones de Metacritic, se correlacionaran las variables para determinar si existe algun tipo de influencia.
+
+Tambien se quiere determinar si los generos de mas popularidad en los ultimos 5 años tienen una diferencia de ventas significativa entre ellos.
+
+## Integración y selección de los datos
+En esta fase nos encargamos de extraer el dataset a ser examinado y cargamos los datos del archivo "VideoGames.csv", 
+
+```{r VideoGames}
+vg <- read.csv('VideoGames.csv', stringsAsFactors = FALSE)
+```
+
+Selecionamos los datos de interes y descartartamos las columnas que no necesitamos ya que no influyen para el proposito del analisis, luego verificamos la estructura del juego de datos.
+
+```{r}
+vg$Name <- NULL
+vg$Publisher <- NULL
+vg$Developer <- NULL
+vg$Rating <- NULL
+str(vg)
+```
+
+##Limpieza de los datos
+En esta fase se tratara de resolver los datos no consistentes o datos no validos, primero se verificara que columnas los contienen.
+
+```{r}
+colSums(is.na(vg))
+colSums(vg=="N/A")
+colSums(vg=="0")
+colSums(vg=="")
+```
+
+Una vez realizada la inspeccion procedemos a la limpieza de datos, procedemos a eliminar los valores extremos de Year_of_Release mayores al 2016 ya que el dataset se formo el 22 de diciembre del 2016 y cambianos los valores de "N/A" a nulos para luego hacer el conjunto a entero y colocar valores de la mediana en los valores nulos, los Géneros vacios se colocan el nombre de "S/G" (sin genero) y finalmente cambianos los valores de "tbd" de User_Score a nulos para hacerla conjunto entero.
+
+Los demas valores extremos identificados corresponden a valores de sumatorias de ventas o numeros de criticas y por ende son valores reales posibles.
+
+Mostraremos para cada atributo los valores mediante la funcion summary.
+
+```{r}
+vg <- vg[vg$Year_of_Release<=2016,]
+vg$Year_of_Release[vg$Year_of_Release=="N/A"]=NA
+vg$Year_of_Release <- as.integer(vg$Year_of_Release)
+vg$Year_of_Release[is.na(vg$Year_of_Release)] <- median(vg$Year_of_Release,na.rm=T)
+
+vg$Genre[vg$Genre==""]="S/G"
+
+vg$User_Score[vg$User_Score=="tbd"]=NA
+vg$User_Score <- as.integer(vg$User_Score)
+
+summary(vg)
+```
+
+Adicionamente exportamos el dataset generado despues de la limpieza de datos
+```{r}
+write.csv(vg, "VideoGamesClean.csv")
+```
+
+## Análisis de los datos
+En esta fase se realizaran los proceso de analisis para poder responder a las preguntas planteadas en el inicio de la practica.
+
+### Selección de grupos
+En esta fase selecionamos a los juegos publicados desde el 2011, para poder observar la tendencia de los ultimos años de desarrollo de juegos respecto al genero, no se tomara en cuenta la plataforma puesto que es cambiante y cada cierto tiempo hay nuevas consolas. 
+
+```{r}
+vg_5y <- vg[vg$Year_of_Release>2010,]
+summary(vg_5y)
+str(vg_5y)
+```
+
+Selecionamos los 3 primeros generos que son "Action", "Role-Playing" y "Adventure" cada uno en un subconjunto. 
+```{r}
+vg_Genero1 <- vg_5y[vg_5y$Genre == "Action",]$Global_Sales
+vg_Genero2 <- vg_5y[vg_5y$Genre == "Role-Playing",]$Global_Sales
+vg_Genero3 <- vg_5y[vg_5y$Genre == "Adventure",]$Global_Sales
+
+```
+
+### Comprobación de la normalidad y homogeneidad de la varianza
+Se comprueba si existe atributos con distribucion normal y utilizamos la prueba de AndersonDarling ya que la muestra es mayor a 5000 registros. Se fija α = 0.05, este algoritmo fue tomado del ejemplo de la practica.
+```{r}
+library(nortest)
+alpha = 0.05
+col.names = colnames(vg)
+for (i in 1:ncol(vg)) {
+  if (i == 1) cat("Variables que no siguen una distribución normal:\n")
+  
+  if (is.integer(vg[,i]) | is.numeric(vg[,i])) {
+    p_val = ad.test(vg[,i])$p.value
+    if (p_val < alpha) {
+      cat(col.names[i])
+      # Format output
+      if (i < ncol(vg) - 1) cat(", ")
+      if (i %% 3 == 0) cat("\n")
+    }
+  }
+}
+```
+En este caso ningun atributo siguió la distribucion normal y por esta razón no se puede realizar la homogeneidad de la varianza.
+
+Aqui una prueba de que el valor de "p-value" tiene de a cero
+```{r}
+vg$Platform <- as.factor(vg$Platform)
+fligner.test(Year_of_Release ~ Platform, data = vg)
+```
+Se muestra que el valor de p-value es menor a 0.05
+
+### Aplicación de pruebas estadísticas
+
+En esta fase creamos una matriz de correlacion entre la variables numericas para determinar si existe una relacion entre la muestras, 
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+library(PerformanceAnalytics)
+vg_grupo <- vg[,4:12]
+#vg_grupo <- na.omit(vg_grupo)
+chart.Correlation(vg_grupo)
+```
+
+Aplicado la matriz podemos decir que existe una fuerte relacion entre la venta generadas en NA_Sales y EU_Sales contra Global_Sales, que las ventas tiene poca relacion con la puntuaciones de Critic_Score y casi nula con las puntuaciones de User_Score
+
+Tambien se realizan pruebas de comparación entre los 3 primeros generos de mayor popularidad desde el 2011.
+```{r}
+t.test(vg_Genero1, vg_Genero2,alternative = "less")
+t.test(vg_Genero1, vg_Genero3,alternative = "less")
+t.test(vg_Genero2, vg_Genero3,alternative = "less")
+```
+Comparados los resultados se puede observar que las ventas globales no dependen de genero ya que sus "p-value" es mayor a 0.05, esto quiere decir que los principales generos de los ultimos 5 años no generan mas ventas que los demas.
+
+## resultados
+Mostramos los resultados del atributo "Year_of_Release" para ver graficamente que no existe distribucion normal y que la homogeneidad de la varianza del mismo respecto a la plataforma no se da el resultado.
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+# distribucion no normal
+library("car")
+library(ggplot2)
+qqPlot(vg$Year_of_Release)
+# homogeneidad de la varianza
+ggplot(data = vg, aes(x = Platform, y = Year_of_Release)) +  geom_boxplot() + geom_point() +  theme_bw() +  theme(legend.position = "none")
+```
+
+## Concluciones
+Como podemos observar en la practica, donde se ha podido analizar el conjunto de datos y se ha podido determinar que: 
+
+1.- No existe relacion significativa entre la ventas de los juegos y las puntuaciones de Metacritic, lo que quiere decir que una mala o buena critica no influira en mayor medida con las ventas en cualquier parte del mundo, pero se puedo descubrir que si existe una relacion entre las ventas de norte america o la union europea con las ventas globales y se podria concluir que si se logra buenas ventas en estas zonas tendrá influencia positiva en el resto del mundo.
+
+2.- Tambien se pudo determinar que los generos de más popularidad en los ultimos 5 años no generan ma ventas globales que otros, asi que es posible ir por el desarrollo o compra de juegos de cualquier genero y su rentabilidad puede ser la misma, eso dependera posiblemente de otros factores que no se han proporcionado en este conjunto de datos.
